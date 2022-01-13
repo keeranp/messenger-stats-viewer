@@ -45,10 +45,11 @@ const cleanData = (files, mainResolve) => {
         }
 
         Promise.all(promises).then(messages => {
-            for(let message of messages){
+            for (let message of messages) {
                 data["messages"] = data["messages"].concat(message)
             }
 
+            data["messages"] = data["messages"].reverse()
             mainResolve(data)
         })
     }
@@ -56,4 +57,18 @@ const cleanData = (files, mainResolve) => {
     mainReader.readAsText(files[0])
 }
 
-module.exports = cleanData
+const hexToRgbA = (hex, opacity) => {
+    var c;
+    if (/^#([A-Fa-f0-9]{3}){1,2}$/.test(hex)) {
+        c = hex.substring(1).split('')
+        if (c.length == 3) {
+            c = [c[0], c[0], c[1], c[1], c[2], c[2]]
+        }
+        c = '0x' + c.join('')
+        return 'rgba(' + [(c >> 16) & 255, (c >> 8) & 255, c & 255].join(',') + ',' + opacity + ')'
+    }
+    throw new Error('Bad Hex');
+}
+
+
+module.exports = { cleanData, hexToRgbA }
