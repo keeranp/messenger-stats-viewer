@@ -61,9 +61,19 @@ document.getElementById("import").onclick = () => {
                 let msgPerDayData = messagePerDay(data)
                 const msgPerDayChart = Chart.getChart("msgPerDay")
                 msgPerDayChart.data.labels = msgPerDayData[0]
-                msgPerDayChart.data.datasets.forEach((dataset) => {
-                    dataset.data = msgPerDayData[1]
-                });
+
+                const datasets = []
+                for (let i = 0; i < data["participants"].length; i++) {
+                    datasets.push({
+                        label: data["participants"][i]["name"],
+                        data: msgPerDayData[1].map((value, index) => { return value[i] }),
+                        fill: true,
+                        backgroundColor: utils.hexToRgbA(colorScheme[i], 0.4),
+                        borderColor: utils.hexToRgbA(colorScheme[i], 0.5)
+                    })
+                }
+
+                msgPerDayChart.data.datasets = datasets
                 msgPerDayChart.update()
             }
         })
