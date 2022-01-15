@@ -1,6 +1,6 @@
 const { Chart } = require("chart.js")
-const { createMessagePerDayChart, updateMessagePerDayChart } = require("./chart")
-const messagePerDay = require("./stats")
+const { createMessagePerDayChart, updateMessagePerDayChart, createTimeBetweenMessageInfo } = require("./chart")
+const stats = require("./stats")
 const utils = require("./utils")
 
 document.getElementById("import").onclick = () => {
@@ -18,10 +18,13 @@ document.getElementById("import").onclick = () => {
         //Clean the JSON files because they are incorrectly encoded and merge them into one file.
         new Promise(resolve => utils.cleanData(files, resolve)).then(fileData => {
             if ($("#charts").length === 0) {
-                let msgPerDayData = messagePerDay(fileData)
+                $("body").append("<div id='charts'></div>")
+                let msgPerDayData = stats.messagePerDay(fileData)
                 createMessagePerDayChart(msgPerDayData, fileData)
+                let timeBetweenMessageData = stats.timeBetweenMessage(fileData)
+                createTimeBetweenMessageInfo(timeBetweenMessageData, fileData)
             } else {
-                let msgPerDayData = messagePerDay(fileData)
+                let msgPerDayData = stats.messagePerDay(fileData)
                 updateMessagePerDayChart(msgPerDayData, fileData)
             }
         })

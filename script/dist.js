@@ -13456,8 +13456,8 @@ return Chart;
 
 },{}],3:[function(require,module,exports){
 const { Chart } = require("chart.js")
-const { createMessagePerDayChart, updateMessagePerDayChart } = require("./chart")
-const messagePerDay = require("./stats")
+const { createMessagePerDayChart, updateMessagePerDayChart, createTimeBetweenMessageInfo } = require("./chart")
+const stats = require("./stats")
 const utils = require("./utils")
 
 document.getElementById("import").onclick = () => {
@@ -13475,10 +13475,13 @@ document.getElementById("import").onclick = () => {
         //Clean the JSON files because they are incorrectly encoded and merge them into one file.
         new Promise(resolve => utils.cleanData(files, resolve)).then(fileData => {
             if ($("#charts").length === 0) {
-                let msgPerDayData = messagePerDay(fileData)
+                $("body").append("<div id='charts'></div>")
+                let msgPerDayData = stats.messagePerDay(fileData)
                 createMessagePerDayChart(msgPerDayData, fileData)
+                let timeBetweenMessageData = stats.timeBetweenMessage(fileData)
+                createTimeBetweenMessageInfo(timeBetweenMessageData, fileData)
             } else {
-                let msgPerDayData = messagePerDay(fileData)
+                let msgPerDayData = stats.messagePerDay(fileData)
                 updateMessagePerDayChart(msgPerDayData, fileData)
             }
         })
@@ -13504,7 +13507,7 @@ const createChartDatasets = (chartData, fileData) => {
 }
 
 const createMessagePerDayChart = (msgPerDayData, fileData) => {
-    $("body").append("<div id='charts'><canvas id='msgPerDay' width='300' height='100'></canvas></div>")
+    $("#charts").append("<canvas id='msgPerDay' width='300' height='100'></canvas>")
     const msgPerDayCtx = document.getElementById("msgPerDay").getContext("2d")
 
     const msgPerDayChartData = {
@@ -13528,16 +13531,45 @@ const updateMessagePerDayChart = (msgPerDayData, fileData) => {
     msgPerDayChart.update()
 }
 
-module.exports = { createMessagePerDayChart, updateMessagePerDayChart }
+const createTimeBetweenMessageInfo = (timeBetweenMessageData, fileData) => {
+    $("#charts").append("<div id='timeBetweenMessage'></div>")
+    $("#timeBetweenMessage").append("<h2>Time between two messages</h2>")
+
+    for (let i = 0; i < timeBetweenMessageData[0].length; i++) {
+        //Longuest
+        let daysLong = Math.floor(timeBetweenMessageData[0][i] / 86400)
+        timeBetweenMessageData[0][i] -= daysLong * 86400
+
+        let hoursLong = Math.floor(timeBetweenMessageData[0][i] / 3600)
+        timeBetweenMessageData[0][i] -= hoursLong * 3600
+
+        let minutesLong = Math.floor(timeBetweenMessageData[0][i] / 60)
+
+        //Average
+        let daysAverage = Math.floor(timeBetweenMessageData[1][i] / 86400)
+        timeBetweenMessageData[1][i] -= daysAverage * 86400
+
+        let hoursAverage = Math.floor(timeBetweenMessageData[1][i] / 3600)
+        timeBetweenMessageData[1][i] -= hoursAverage * 3600
+
+        let minutesAverage = Math.floor(timeBetweenMessageData[1][i] / 60)
+
+        $("#timeBetweenMessage").append("<h3>" + fileData["participants"][i]["name"] + "</h3>")
+        $("#timeBetweenMessage").append("<p>Longuest time between two messages: " + daysLong + " days, " + hoursLong + " hours and " + minutesLong + " minutes." + "</p>")
+        $("#timeBetweenMessage").append("<p>Average time between two messages: " + daysAverage + " days, " + hoursAverage + " hours and " + minutesAverage + " minutes." + "</p>")
+    }
+}
+
+module.exports = { createMessagePerDayChart, updateMessagePerDayChart, createTimeBetweenMessageInfo }
 },{"./utils":6}],5:[function(require,module,exports){
 const messagePerDay = data => {
-    let particpants = []
-    for(let participant of data["participants"]){
-        particpants.push(participant["name"])
+    let participants = []
+    for (let participant of data["participants"]) {
+        participants.push(participant["name"])
     }
-    
+
     let days = []
-    let numSentMsg = new Array(particpants.length).fill(0)
+    let numSentMsg = new Array(participants.length).fill(0)
 
     previousTime = new Date(data["messages"][0]["timestamp_ms"])
     days.push(previousTime.toISOString().split('T')[0])
@@ -13547,15 +13579,55 @@ const messagePerDay = data => {
         if (previousTime.getTime() + 86400000 < time.getTime()) {
             previousTime = time
             days.push(previousTime.toISOString().split('T')[0])
-            numSentMsg[days.length - 1] = new Array(particpants.length).fill(0)
+            numSentMsg[days.length - 1] = new Array(participants.length).fill(0)
         }
-        numSentMsg[days.length - 1][particpants.indexOf(message["sender_name"])]++
+        numSentMsg[days.length - 1][participants.indexOf(message["sender_name"])]++
     }
-    
+
     return [days, numSentMsg]
 }
 
-module.exports = messagePerDay
+const timeBetweenMessage = data => {
+    let participants = []
+    for (let participant of data["participants"]) {
+        participants.push(participant["name"])
+    }
+
+    let allLonguestTimeBetweenMessage = new Array(participants.length)
+    let allAverageTimeBetweenMessage = new Array(participants.length)
+
+    for (let i = 0; i < participants.length; i++) {
+        allLonguestTimeBetweenMessage[i] = 0
+        let averageTimeBetweenMessage = 0
+        let numberOfMessages = 0
+        let firstTime = 0
+        let secondTime = 0
+
+        for (let message of data["messages"]) {
+            if (message["sender_name"] == participants[i]) {
+                numberOfMessages++
+                if (firstTime == 0) {
+                    firstTime = new Date(message["timestamp_ms"])
+                }
+                else {
+                    secondTime = new Date(message["timestamp_ms"])
+                    let timeBetweenMessage = (secondTime - firstTime) / 1000
+                    averageTimeBetweenMessage += timeBetweenMessage
+                    if (allLonguestTimeBetweenMessage[i] < timeBetweenMessage) {
+                        allLonguestTimeBetweenMessage[i] = timeBetweenMessage
+                    }
+                    firstTime = secondTime
+                }
+            }
+        }
+
+        allAverageTimeBetweenMessage[i] = averageTimeBetweenMessage / numberOfMessages
+    }
+
+    return [allLonguestTimeBetweenMessage, allAverageTimeBetweenMessage]
+}
+
+module.exports = { messagePerDay, timeBetweenMessage }
 },{}],6:[function(require,module,exports){
 const utf8 = require('utf8');
 
