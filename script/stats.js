@@ -63,4 +63,30 @@ const timeBetweenMessage = data => {
     return [allLonguestTimeBetweenMessage, allAverageTimeBetweenMessage]
 }
 
-module.exports = { messagePerDay, timeBetweenMessage }
+const averageWordPerMessage = data => {
+    let participants = []
+    for (let participant of data["participants"]) {
+        participants.push(participant["name"])
+    }
+
+    averageWordPerMessageData = []
+
+    for (let i = 0; i < participants.length; i++) {
+        let nbMessage = 0
+        let totalWords = 0
+        for (let message of data["messages"]) {
+            if (message["sender_name"] == participants[i]) {
+                nbMessage++
+                if (message["content"]) {
+                    totalWords += message["content"].split(" ").length
+                }
+            }
+        }
+
+        averageWordPerMessageData.push(totalWords / nbMessage)
+    }
+
+    return averageWordPerMessageData
+}
+
+module.exports = { messagePerDay, timeBetweenMessage, averageWordPerMessage }

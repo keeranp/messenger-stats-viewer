@@ -1,5 +1,5 @@
 const { Chart } = require("chart.js")
-const { createMessagePerDayChart, updateMessagePerDayChart, createTimeBetweenMessageInfo } = require("./chart")
+const { createMessagePerDayChart, updateMessagePerDayChart, createTimeBetweenMessageInfo, updateTimeBetweenMessageInfo, createAverageWordPerMessageInfo, updateAverageWordPerMessageInfo } = require("./chart")
 const stats = require("./stats")
 const utils = require("./utils")
 
@@ -21,11 +21,21 @@ document.getElementById("import").onclick = () => {
                 $("body").append("<div id='charts'></div>")
                 let msgPerDayData = stats.messagePerDay(fileData)
                 createMessagePerDayChart(msgPerDayData, fileData)
+
                 let timeBetweenMessageData = stats.timeBetweenMessage(fileData)
                 createTimeBetweenMessageInfo(timeBetweenMessageData, fileData)
+
+                let averageWordPerMessageData = stats.averageWordPerMessage(fileData)
+                createAverageWordPerMessageInfo(averageWordPerMessageData, fileData)
             } else {
                 let msgPerDayData = stats.messagePerDay(fileData)
                 updateMessagePerDayChart(msgPerDayData, fileData)
+
+                let timeBetweenMessageData = stats.timeBetweenMessage(fileData)
+                updateTimeBetweenMessageInfo(timeBetweenMessageData, fileData)
+
+                let averageWordPerMessageData = stats.averageWordPerMessage(fileData)
+                updateAverageWordPerMessageInfo(averageWordPerMessageData, fileData) 
             }
         })
     }

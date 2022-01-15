@@ -13456,7 +13456,7 @@ return Chart;
 
 },{}],3:[function(require,module,exports){
 const { Chart } = require("chart.js")
-const { createMessagePerDayChart, updateMessagePerDayChart, createTimeBetweenMessageInfo } = require("./chart")
+const { createMessagePerDayChart, updateMessagePerDayChart, createTimeBetweenMessageInfo, updateTimeBetweenMessageInfo, createAverageWordPerMessageInfo, updateAverageWordPerMessageInfo } = require("./chart")
 const stats = require("./stats")
 const utils = require("./utils")
 
@@ -13478,11 +13478,21 @@ document.getElementById("import").onclick = () => {
                 $("body").append("<div id='charts'></div>")
                 let msgPerDayData = stats.messagePerDay(fileData)
                 createMessagePerDayChart(msgPerDayData, fileData)
+
                 let timeBetweenMessageData = stats.timeBetweenMessage(fileData)
                 createTimeBetweenMessageInfo(timeBetweenMessageData, fileData)
+
+                let averageWordPerMessageData = stats.averageWordPerMessage(fileData)
+                createAverageWordPerMessageInfo(averageWordPerMessageData, fileData)
             } else {
                 let msgPerDayData = stats.messagePerDay(fileData)
                 updateMessagePerDayChart(msgPerDayData, fileData)
+
+                let timeBetweenMessageData = stats.timeBetweenMessage(fileData)
+                updateTimeBetweenMessageInfo(timeBetweenMessageData, fileData)
+
+                let averageWordPerMessageData = stats.averageWordPerMessage(fileData)
+                updateAverageWordPerMessageInfo(averageWordPerMessageData, fileData) 
             }
         })
     }
@@ -13554,13 +13564,63 @@ const createTimeBetweenMessageInfo = (timeBetweenMessageData, fileData) => {
 
         let minutesAverage = Math.floor(timeBetweenMessageData[1][i] / 60)
 
-        $("#timeBetweenMessage").append("<h3>" + fileData["participants"][i]["name"] + "</h3>")
-        $("#timeBetweenMessage").append("<p>Longuest time between two messages: " + daysLong + " days, " + hoursLong + " hours and " + minutesLong + " minutes." + "</p>")
-        $("#timeBetweenMessage").append("<p>Average time between two messages: " + daysAverage + " days, " + hoursAverage + " hours and " + minutesAverage + " minutes." + "</p>")
+        let className = fileData["participants"][i]["name"].replaceAll(' ', '-')
+
+        $("#timeBetweenMessage").append("<h3 class='" + className + "'" + ">" + fileData["participants"][i]["name"] + "</h3>")
+        $("#timeBetweenMessage").append("<p class='" + className + "-longuest" + "'" + ">Longuest time between two messages: " + daysLong + " days, " + hoursLong + " hours and " + minutesLong + " minutes." + "</p>")
+        $("#timeBetweenMessage").append("<p class='" + className + "-average" + "'" + ">Average time between two messages: " + daysAverage + " days, " + hoursAverage + " hours and " + minutesAverage + " minutes." + "</p>")
     }
 }
 
-module.exports = { createMessagePerDayChart, updateMessagePerDayChart, createTimeBetweenMessageInfo }
+const updateTimeBetweenMessageInfo = (timeBetweenMessageData, fileData) => {
+    for (let i = 0; i < timeBetweenMessageData[0].length; i++) {
+        //Longuest
+        let daysLong = Math.floor(timeBetweenMessageData[0][i] / 86400)
+        timeBetweenMessageData[0][i] -= daysLong * 86400
+
+        let hoursLong = Math.floor(timeBetweenMessageData[0][i] / 3600)
+        timeBetweenMessageData[0][i] -= hoursLong * 3600
+
+        let minutesLong = Math.floor(timeBetweenMessageData[0][i] / 60)
+
+        //Average
+        let daysAverage = Math.floor(timeBetweenMessageData[1][i] / 86400)
+        timeBetweenMessageData[1][i] -= daysAverage * 86400
+
+        let hoursAverage = Math.floor(timeBetweenMessageData[1][i] / 3600)
+        timeBetweenMessageData[1][i] -= hoursAverage * 3600
+
+        let minutesAverage = Math.floor(timeBetweenMessageData[1][i] / 60)
+
+        let className = fileData["participants"][i]["name"].replaceAll(' ', '-')
+
+        $("." + className + "-longuest").text("Longuest time between two messages: " + daysLong + " days, " + hoursLong + " hours and " + minutesLong + " minutes.")
+        $("." + className + "-average").text("Average time between two messages: " + daysAverage + " days, " + hoursAverage + " hours and " + minutesAverage + " minutes.")
+    }
+}
+
+const createAverageWordPerMessageInfo = (averageWordPerMessageData, fileData) => {
+    $("#charts").append("<div id='averageWordPerMessage'></div>")
+    $("#averageWordPerMessage").append("<h2>Average word per messages</h2>")
+
+    for (let i = 0; i < averageWordPerMessageData.length; i++) {
+        let className = fileData["participants"][i]["name"].replaceAll(' ', '-')
+
+        $("#averageWordPerMessage").append("<h3 class='" + className + "'" + ">" + fileData["participants"][i]["name"] + "</h3>")
+        $("#averageWordPerMessage").append("<p class='" + className + "-average-word" + "'" + "> " + Math.round( averageWordPerMessageData[i] * 100 + Number.EPSILON ) / 100 + " words per message.</p>")
+    }
+}
+
+const updateAverageWordPerMessageInfo = (averageWordPerMessageData, fileData) => {
+
+    for (let i = 0; i < averageWordPerMessageData.length; i++) {
+        let className = fileData["participants"][i]["name"].replaceAll(' ', '-')
+        
+        $("." + className + "-average-word").text(Math.round( averageWordPerMessageData[i] * 100 + Number.EPSILON ) / 100 + " words per message.")
+    }
+}
+
+module.exports = { createMessagePerDayChart, updateMessagePerDayChart, createTimeBetweenMessageInfo, updateTimeBetweenMessageInfo, createAverageWordPerMessageInfo, updateAverageWordPerMessageInfo }
 },{"./utils":6}],5:[function(require,module,exports){
 const messagePerDay = data => {
     let participants = []
@@ -13627,7 +13687,33 @@ const timeBetweenMessage = data => {
     return [allLonguestTimeBetweenMessage, allAverageTimeBetweenMessage]
 }
 
-module.exports = { messagePerDay, timeBetweenMessage }
+const averageWordPerMessage = data => {
+    let participants = []
+    for (let participant of data["participants"]) {
+        participants.push(participant["name"])
+    }
+
+    averageWordPerMessageData = []
+
+    for (let i = 0; i < participants.length; i++) {
+        let nbMessage = 0
+        let totalWords = 0
+        for (let message of data["messages"]) {
+            if (message["sender_name"] == participants[i]) {
+                nbMessage++
+                if (message["content"]) {
+                    totalWords += message["content"].split(" ").length
+                }
+            }
+        }
+
+        averageWordPerMessageData.push(totalWords / nbMessage)
+    }
+
+    return averageWordPerMessageData
+}
+
+module.exports = { messagePerDay, timeBetweenMessage, averageWordPerMessage }
 },{}],6:[function(require,module,exports){
 const utf8 = require('utf8');
 
