@@ -13456,48 +13456,51 @@ return Chart;
 
 },{}],3:[function(require,module,exports){
 const { Chart } = require("chart.js")
-const { createMessagePerDayChart, updateMessagePerDayChart, createTimeBetweenMessageInfo, updateTimeBetweenMessageInfo, createAverageWordPerMessageInfo, updateAverageWordPerMessageInfo } = require("./chart")
+const { createMessagePerDayChart, updateMessagePerDayChart, createTimeBetweenMessageInfo, updateTimeBetweenMessageInfo, createAverageWordPerMessageInfo, updateAverageWordPerMessageInfo, createMessagePieChart, updateMessagePieChart } = require("./dataVisualisation")
 const stats = require("./stats")
 const utils = require("./utils")
 
-document.getElementById("import").onclick = () => {
+document.getElementById("selectFiles").oninput = () => {
     let files = document.getElementById("selectFiles").files
 
-    if (files.length === 0) {
-        if ($("#error").length === 0) {
-            $("body").append("<h6 id='error'>No file selected.</h6>")
+    //Clean the JSON files because they are incorrectly encoded and merge them into one file.
+    new Promise(resolve => utils.cleanData(files, resolve)).then(fileData => {
+        if ($("#charts").html() === "") {
+            let messageProportionData = stats.messageProportion(fileData)
+            createMessagePieChart(messageProportionData, fileData)
+            
+            let msgPerDayData = stats.messagePerDay(fileData)
+            createMessagePerDayChart(msgPerDayData, fileData)
+
+            let timeBetweenMessageData = stats.timeBetweenMessage(fileData)
+            createTimeBetweenMessageInfo(timeBetweenMessageData, fileData)
+
+            let averageWordPerMessageData = stats.averageWordPerMessage(fileData)
+            createAverageWordPerMessageInfo(averageWordPerMessageData, fileData)
+        } else {
+            let messageProportionData = stats.messageProportion(fileData)
+            updateMessagePieChart(messageProportionData, fileData)
+
+            let msgPerDayData = stats.messagePerDay(fileData)
+            updateMessagePerDayChart(msgPerDayData, fileData)
+
+            let timeBetweenMessageData = stats.timeBetweenMessage(fileData)
+            updateTimeBetweenMessageInfo(timeBetweenMessageData, fileData)
+
+            let averageWordPerMessageData = stats.averageWordPerMessage(fileData)
+            updateAverageWordPerMessageInfo(averageWordPerMessageData, fileData)
         }
-    } else {
-        if ($("#error").length > 0) {
-            $("#error").remove()
-        }
-
-        //Clean the JSON files because they are incorrectly encoded and merge them into one file.
-        new Promise(resolve => utils.cleanData(files, resolve)).then(fileData => {
-            if ($("#charts").length === 0) {
-                $("body").append("<div id='charts'></div>")
-                let msgPerDayData = stats.messagePerDay(fileData)
-                createMessagePerDayChart(msgPerDayData, fileData)
-
-                let timeBetweenMessageData = stats.timeBetweenMessage(fileData)
-                createTimeBetweenMessageInfo(timeBetweenMessageData, fileData)
-
-                let averageWordPerMessageData = stats.averageWordPerMessage(fileData)
-                createAverageWordPerMessageInfo(averageWordPerMessageData, fileData)
-            } else {
-                let msgPerDayData = stats.messagePerDay(fileData)
-                updateMessagePerDayChart(msgPerDayData, fileData)
-
-                let timeBetweenMessageData = stats.timeBetweenMessage(fileData)
-                updateTimeBetweenMessageInfo(timeBetweenMessageData, fileData)
-
-                let averageWordPerMessageData = stats.averageWordPerMessage(fileData)
-                updateAverageWordPerMessageInfo(averageWordPerMessageData, fileData) 
-            }
-        })
-    }
+    }).then(() => {
+        $('html,body').animate({
+            scrollTop: $("#content").offset().top
+        },
+            1000);
+    }).catch((e) => {
+        console.log(e)
+    })
 }
-},{"./chart":4,"./stats":5,"./utils":6,"chart.js":1}],4:[function(require,module,exports){
+},{"./dataVisualisation":4,"./stats":5,"./utils":6,"chart.js":1}],4:[function(require,module,exports){
+const { Chart } = require("chart.js")
 const utils = require("./utils")
 
 const createChartDatasets = (chartData, fileData) => {
@@ -13516,9 +13519,83 @@ const createChartDatasets = (chartData, fileData) => {
     return datasets
 }
 
+const createMessagePieChart = (messageProportionData, fileData) => {
+    $("#charts").append("<div id='msgPieContainer'><canvas id='msgPieChart'></canvas></div>")
+    const msgPieChartCtx = document.getElementById("msgPieChart").getContext("2d")
+
+    const msgPieChartData = {
+        labels: messageProportionData[0],
+        datasets: [{
+            label: "Message proportion",
+            data: messageProportionData[1],
+            backgroundColor: () => {
+                let colors = []
+                for (let i = 0; i < messageProportionData[0].length; i++) {
+                    colors.push(utils.colorScheme[i])
+                }
+                return colors
+            }
+        }]
+    }
+
+    const config = {
+        type: "pie",
+        data: msgPieChartData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            radius: '80%',
+            plugins: {
+                legend: {
+                    position: "bottom",
+                    labels: {
+                        color: "black",
+                        font: {
+                            size: 14,
+                            weight: 500
+                        }
+                    }
+                },
+                title: {
+                    display: true,
+                    text: "Who talks the most",
+                    color: "black",
+                    font: {
+                        size: 18,
+                        weight: 'bold'
+                    }
+                }
+            }
+        }
+    }
+
+    new Chart(msgPieChartCtx, config)
+}
+
+const updateMessagePieChart = (messageProportionData, fileData) => {
+    const msgPieChart = Chart.getChart("msgPieChart")
+
+
+    msgPieChart.data.labels = messageProportionData[0]
+    msgPieChart.data.datasets = [{
+        label: "Message proportion",
+        data: messageProportionData[1],
+        backgroundColor: () => {
+            let colors = []
+            for (let i = 0; i < messageProportionData[0].length; i++) {
+                colors.push(utils.colorScheme[i])
+            }
+            return colors
+        }
+    }]
+
+    msgPieChart.update()
+}
+
+
 const createMessagePerDayChart = (msgPerDayData, fileData) => {
-    $("#charts").append("<canvas id='msgPerDay' width='300' height='100'></canvas>")
-    const msgPerDayCtx = document.getElementById("msgPerDay").getContext("2d")
+    $("#charts").append("<div id='msgPerDayContainer'><canvas id='msgPerDayChart'></canvas></div>")
+    const msgPerDayChartCtx = document.getElementById("msgPerDayChart").getContext("2d")
 
     const msgPerDayChartData = {
         labels: msgPerDayData[0],
@@ -13528,23 +13605,42 @@ const createMessagePerDayChart = (msgPerDayData, fileData) => {
     const config = {
         type: "line",
         data: msgPerDayChartData,
-        options: {}
+        options: {
+            plugins: {
+                legend: {
+                    position: "bottom",
+                    labels: {
+                        color: "black",
+                        font: {
+                            size: 14,
+                            weight: 500
+                        }
+                    }
+                },
+                title: {
+                    display: true,
+                    text: "How many messages per day did you send",
+                    color: "black",
+                    font: {
+                        size: 18,
+                        weight: 'bold'
+                    }
+                }
+            }
+        }
     }
 
-    const msgPerDayChart = new Chart(msgPerDayCtx, config)
+    new Chart(msgPerDayChartCtx, config)
 }
 
 const updateMessagePerDayChart = (msgPerDayData, fileData) => {
-    const msgPerDayChart = Chart.getChart("msgPerDay")
+    const msgPerDayChart = Chart.getChart("msgPerDayChart")
     msgPerDayChart.data.labels = msgPerDayData[0]
     msgPerDayChart.data.datasets = createChartDatasets(msgPerDayData[1], fileData)
     msgPerDayChart.update()
 }
 
 const createTimeBetweenMessageInfo = (timeBetweenMessageData, fileData) => {
-    $("#charts").append("<div id='timeBetweenMessage'></div>")
-    $("#timeBetweenMessage").append("<h2>Time between two messages</h2>")
-
     for (let i = 0; i < timeBetweenMessageData[0].length; i++) {
         //Longuest
         let daysLong = Math.floor(timeBetweenMessageData[0][i] / 86400)
@@ -13566,9 +13662,10 @@ const createTimeBetweenMessageInfo = (timeBetweenMessageData, fileData) => {
 
         let className = fileData["participants"][i]["name"].replaceAll(' ', '-')
 
-        $("#timeBetweenMessage").append("<h3 class='" + className + "'" + ">" + fileData["participants"][i]["name"] + "</h3>")
-        $("#timeBetweenMessage").append("<p class='" + className + "-longuest" + "'" + ">Longuest time between two messages: " + daysLong + " days, " + hoursLong + " hours and " + minutesLong + " minutes." + "</p>")
-        $("#timeBetweenMessage").append("<p class='" + className + "-average" + "'" + ">Average time between two messages: " + daysAverage + " days, " + hoursAverage + " hours and " + minutesAverage + " minutes." + "</p>")
+        $("#stats").append("<div id='" + className + "'></div>")
+        $("#" + className).append("<h3 class='" + className + "'" + ">" + fileData["participants"][i]["name"] + "</h3>")
+        $("#" + className).append("<p class='" + className + "-longuest" + "'" + ">Longuest time between two messages: " + daysLong + " days, " + hoursLong + " hours and " + minutesLong + " minutes." + "</p>")
+        $("#" + className).append("<p class='" + className + "-average" + "'" + ">Average time between two messages: " + daysAverage + " days, " + hoursAverage + " hours and " + minutesAverage + " minutes." + "</p>")
     }
 }
 
@@ -13600,14 +13697,10 @@ const updateTimeBetweenMessageInfo = (timeBetweenMessageData, fileData) => {
 }
 
 const createAverageWordPerMessageInfo = (averageWordPerMessageData, fileData) => {
-    $("#charts").append("<div id='averageWordPerMessage'></div>")
-    $("#averageWordPerMessage").append("<h2>Average word per messages</h2>")
-
     for (let i = 0; i < averageWordPerMessageData.length; i++) {
         let className = fileData["participants"][i]["name"].replaceAll(' ', '-')
 
-        $("#averageWordPerMessage").append("<h3 class='" + className + "'" + ">" + fileData["participants"][i]["name"] + "</h3>")
-        $("#averageWordPerMessage").append("<p class='" + className + "-average-word" + "'" + "> " + Math.round( averageWordPerMessageData[i] * 100 + Number.EPSILON ) / 100 + " words per message.</p>")
+        $("#" + className).append("<p class='" + className + "-average-word" + "'" + "> " + Math.round(averageWordPerMessageData[i] * 100 + Number.EPSILON) / 100 + " words per message.</p>")
     }
 }
 
@@ -13615,13 +13708,29 @@ const updateAverageWordPerMessageInfo = (averageWordPerMessageData, fileData) =>
 
     for (let i = 0; i < averageWordPerMessageData.length; i++) {
         let className = fileData["participants"][i]["name"].replaceAll(' ', '-')
-        
-        $("." + className + "-average-word").text(Math.round( averageWordPerMessageData[i] * 100 + Number.EPSILON ) / 100 + " words per message.")
+
+        $("." + className + "-average-word").text(Math.round(averageWordPerMessageData[i] * 100 + Number.EPSILON) / 100 + " words per message.")
     }
 }
 
-module.exports = { createMessagePerDayChart, updateMessagePerDayChart, createTimeBetweenMessageInfo, updateTimeBetweenMessageInfo, createAverageWordPerMessageInfo, updateAverageWordPerMessageInfo }
-},{"./utils":6}],5:[function(require,module,exports){
+module.exports = { createMessagePieChart, updateMessagePieChart, createMessagePerDayChart, updateMessagePerDayChart, createTimeBetweenMessageInfo, updateTimeBetweenMessageInfo, createAverageWordPerMessageInfo, updateAverageWordPerMessageInfo }
+},{"./utils":6,"chart.js":1}],5:[function(require,module,exports){
+const messageProportion = data =>{
+    let participants = []
+    for (let participant of data["participants"]) {
+        participants.push(participant["name"])
+    }
+
+    let numSentMsg = new Array(participants.length).fill(0)
+
+    for (let message of data["messages"]) {
+        let index = participants.indexOf(message["sender_name"])
+        numSentMsg[index]++
+    }
+    
+    return [participants, numSentMsg]
+}
+
 const messagePerDay = data => {
     let participants = []
     for (let participant of data["participants"]) {
@@ -13713,7 +13822,7 @@ const averageWordPerMessage = data => {
     return averageWordPerMessageData
 }
 
-module.exports = { messagePerDay, timeBetweenMessage, averageWordPerMessage }
+module.exports = { messageProportion, messagePerDay, timeBetweenMessage, averageWordPerMessage }
 },{}],6:[function(require,module,exports){
 const utf8 = require('utf8');
 

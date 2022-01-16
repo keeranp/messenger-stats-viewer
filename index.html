@@ -11,11 +11,24 @@
 </head>
 
 <body>
-    <h1>Messenger stats viewer</h1>
-    <form>
-        <input type="file" id="selectFiles" value="import" multiple>
-        <button type="button" id="import">Import</button>
-    </form>
+    <header>
+        <div></div>
+        <div id="left">
+            <div>
+                <h1>View statistics about your messenger conversations.</h1>
+                <h2>Upload your JSON file(s) from a Messenger conversation.</h2>
+            </div>
+            <form>
+                <input type="file" id="selectFiles" value="import" multiple>
+                <label for="selectFiles">Choose your file(s)</label>
+            </form>
+        </div>
+    </header>
+
+    <div id="content">
+        <div id="charts"></div>
+        <div id="stats"></div>
+    </div>
     <script src="script/dist.js"></script>
 </body>
 

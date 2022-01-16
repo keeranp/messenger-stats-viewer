@@ -1,3 +1,19 @@
+const messageProportion = data =>{
+    let participants = []
+    for (let participant of data["participants"]) {
+        participants.push(participant["name"])
+    }
+
+    let numSentMsg = new Array(participants.length).fill(0)
+
+    for (let message of data["messages"]) {
+        let index = participants.indexOf(message["sender_name"])
+        numSentMsg[index]++
+    }
+    
+    return [participants, numSentMsg]
+}
+
 const messagePerDay = data => {
     let participants = []
     for (let participant of data["participants"]) {
@@ -89,4 +105,4 @@ const averageWordPerMessage = data => {
     return averageWordPerMessageData
 }
 
-module.exports = { messagePerDay, timeBetweenMessage, averageWordPerMessage }
+module.exports = { messageProportion, messagePerDay, timeBetweenMessage, averageWordPerMessage }

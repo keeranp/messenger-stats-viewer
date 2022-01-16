@@ -10,7 +10,6 @@
   "license": "ISC",
   "dependencies": {
     "chart.js": "^3.7.0",
-    "chartjs-plugin-autocolors": "0.0.5",
     "utf8": "^3.0.0"
   }
 }
