@@ -1,4 +1,4 @@
-const messageProportion = data =>{
+const messageProportion = data => {
     let participants = []
     for (let participant of data["participants"]) {
         participants.push(participant["name"])
@@ -10,7 +10,7 @@ const messageProportion = data =>{
         let index = participants.indexOf(message["sender_name"])
         numSentMsg[index]++
     }
-    
+
     return [participants, numSentMsg]
 }
 
@@ -45,8 +45,8 @@ const timeBetweenMessage = data => {
         participants.push(participant["name"])
     }
 
-    let allLonguestTimeBetweenMessage = new Array(participants.length)
-    let allAverageTimeBetweenMessage = new Array(participants.length)
+    let allLonguestTimeBetweenMessage = new Array(participants.length).fill(0)
+    let allAverageTimeBetweenMessage = new Array(participants.length).fill(0)
 
     for (let i = 0; i < participants.length; i++) {
         allLonguestTimeBetweenMessage[i] = 0
@@ -73,7 +73,11 @@ const timeBetweenMessage = data => {
             }
         }
 
-        allAverageTimeBetweenMessage[i] = averageTimeBetweenMessage / numberOfMessages
+        if (numberOfMessages != 0) {
+            allAverageTimeBetweenMessage[i] = averageTimeBetweenMessage / numberOfMessages
+        } else {
+            allAverageTimeBetweenMessage[i] = 0
+        }
     }
 
     return [allLonguestTimeBetweenMessage, allAverageTimeBetweenMessage]
@@ -99,7 +103,11 @@ const averageWordPerMessage = data => {
             }
         }
 
-        averageWordPerMessageData.push(totalWords / nbMessage)
+        if (nbMessage != 0) {
+            averageWordPerMessageData.push(totalWords / nbMessage)
+        }else{
+            averageWordPerMessageData.push(0)
+        }
     }
 
     return averageWordPerMessageData

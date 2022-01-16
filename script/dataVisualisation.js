@@ -95,9 +95,21 @@ const createMessagePerDayChart = (msgPerDayData, fileData) => {
     $("#charts").append("<div id='msgPerDayContainer'><canvas id='msgPerDayChart'></canvas></div>")
     const msgPerDayChartCtx = document.getElementById("msgPerDayChart").getContext("2d")
 
+    let datasets = createChartDatasets(msgPerDayData[1], fileData)
+    let labels = [...msgPerDayData[0]]
+
+    //Need to implement better decimation
+    if (datasets[0].data.length > 150) {
+        let k = Math.floor(datasets[0].data.length / 150)
+        for (let i = 0; i < datasets.length; i++) {
+            datasets[i].data = datasets[i].data.filter((value, index) => index % k == 0)
+        }
+        labels = labels.filter((value,index) => index % k == 0)
+    }
+
     const msgPerDayChartData = {
-        labels: msgPerDayData[0],
-        datasets: createChartDatasets(msgPerDayData[1], fileData)
+        labels: labels,
+        datasets: datasets
     }
 
     const config = {
@@ -133,8 +145,19 @@ const createMessagePerDayChart = (msgPerDayData, fileData) => {
 
 const updateMessagePerDayChart = (msgPerDayData, fileData) => {
     const msgPerDayChart = Chart.getChart("msgPerDayChart")
-    msgPerDayChart.data.labels = msgPerDayData[0]
-    msgPerDayChart.data.datasets = createChartDatasets(msgPerDayData[1], fileData)
+    let datasets = createChartDatasets(msgPerDayData[1], fileData)
+    let labels = [...msgPerDayData[0]]
+
+    if (datasets[0].data.length > 150) {
+        let k = Math.floor(datasets[0].data.length / 150)
+        for (let i = 0; i < datasets.length; i++) {
+            datasets[i].data = datasets[i].data.filter((value, index) => index % k == 0)
+        }
+        labels = labels.filter((value,index) => index % k == 0)
+    }
+
+    msgPerDayChart.data.labels = labels
+    msgPerDayChart.data.datasets = datasets
     msgPerDayChart.update()
 }
 

@@ -13597,9 +13597,21 @@ const createMessagePerDayChart = (msgPerDayData, fileData) => {
     $("#charts").append("<div id='msgPerDayContainer'><canvas id='msgPerDayChart'></canvas></div>")
     const msgPerDayChartCtx = document.getElementById("msgPerDayChart").getContext("2d")
 
+    let datasets = createChartDatasets(msgPerDayData[1], fileData)
+    let labels = [...msgPerDayData[0]]
+
+    //Need to implement better decimation
+    if (datasets[0].data.length > 150) {
+        let k = Math.floor(datasets[0].data.length / 150)
+        for (let i = 0; i < datasets.length; i++) {
+            datasets[i].data = datasets[i].data.filter((value, index) => index % k == 0)
+        }
+        labels = labels.filter((value,index) => index % k == 0)
+    }
+
     const msgPerDayChartData = {
-        labels: msgPerDayData[0],
-        datasets: createChartDatasets(msgPerDayData[1], fileData)
+        labels: labels,
+        datasets: datasets
     }
 
     const config = {
@@ -13635,8 +13647,19 @@ const createMessagePerDayChart = (msgPerDayData, fileData) => {
 
 const updateMessagePerDayChart = (msgPerDayData, fileData) => {
     const msgPerDayChart = Chart.getChart("msgPerDayChart")
-    msgPerDayChart.data.labels = msgPerDayData[0]
-    msgPerDayChart.data.datasets = createChartDatasets(msgPerDayData[1], fileData)
+    let datasets = createChartDatasets(msgPerDayData[1], fileData)
+    let labels = [...msgPerDayData[0]]
+
+    if (datasets[0].data.length > 150) {
+        let k = Math.floor(datasets[0].data.length / 150)
+        for (let i = 0; i < datasets.length; i++) {
+            datasets[i].data = datasets[i].data.filter((value, index) => index % k == 0)
+        }
+        labels = labels.filter((value,index) => index % k == 0)
+    }
+
+    msgPerDayChart.data.labels = labels
+    msgPerDayChart.data.datasets = datasets
     msgPerDayChart.update()
 }
 
@@ -13715,7 +13738,7 @@ const updateAverageWordPerMessageInfo = (averageWordPerMessageData, fileData) =>
 
 module.exports = { createMessagePieChart, updateMessagePieChart, createMessagePerDayChart, updateMessagePerDayChart, createTimeBetweenMessageInfo, updateTimeBetweenMessageInfo, createAverageWordPerMessageInfo, updateAverageWordPerMessageInfo }
 },{"./utils":6,"chart.js":1}],5:[function(require,module,exports){
-const messageProportion = data =>{
+const messageProportion = data => {
     let participants = []
     for (let participant of data["participants"]) {
         participants.push(participant["name"])
@@ -13727,7 +13750,7 @@ const messageProportion = data =>{
         let index = participants.indexOf(message["sender_name"])
         numSentMsg[index]++
     }
-    
+
     return [participants, numSentMsg]
 }
 
@@ -13762,8 +13785,8 @@ const timeBetweenMessage = data => {
         participants.push(participant["name"])
     }
 
-    let allLonguestTimeBetweenMessage = new Array(participants.length)
-    let allAverageTimeBetweenMessage = new Array(participants.length)
+    let allLonguestTimeBetweenMessage = new Array(participants.length).fill(0)
+    let allAverageTimeBetweenMessage = new Array(participants.length).fill(0)
 
     for (let i = 0; i < participants.length; i++) {
         allLonguestTimeBetweenMessage[i] = 0
@@ -13790,7 +13813,11 @@ const timeBetweenMessage = data => {
             }
         }
 
-        allAverageTimeBetweenMessage[i] = averageTimeBetweenMessage / numberOfMessages
+        if (numberOfMessages != 0) {
+            allAverageTimeBetweenMessage[i] = averageTimeBetweenMessage / numberOfMessages
+        } else {
+            allAverageTimeBetweenMessage[i] = 0
+        }
     }
 
     return [allLonguestTimeBetweenMessage, allAverageTimeBetweenMessage]
@@ -13816,7 +13843,11 @@ const averageWordPerMessage = data => {
             }
         }
 
-        averageWordPerMessageData.push(totalWords / nbMessage)
+        if (nbMessage != 0) {
+            averageWordPerMessageData.push(totalWords / nbMessage)
+        }else{
+            averageWordPerMessageData.push(0)
+        }
     }
 
     return averageWordPerMessageData
